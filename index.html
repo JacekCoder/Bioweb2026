@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="description"
+        content="pHRI Real2Sim in HITL-Simulation: a standardized pipeline for modeling physical human-robot interaction with MuJoCo.">
+  <meta name="keywords" content="pHRI modeling, Real2Sim, Soft modeling, Mass spring damper tuning">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>pHRI Real2Sim</title>
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YCNWPYCD7Z"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+
+    function gtag() {
+      dataLayer.push(arguments);
+    }
+
+    gtag('js', new Date());
+
+    gtag('config', 'G-YCNWPYCD7Z');
+  </script>
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
+        rel="stylesheet">
+
+  <link rel="stylesheet" href="./static/css/bulma.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="./static/css/index.css">
+  <link rel="icon" type="image/svg+xml" href="./static/images/favicon.svg?v=2">
+
+  <!-- Small custom tweaks for the multi-paper layout -->
+  <style>
+    .paper-section { scroll-margin-top: 4rem; }
+    .paper-divider { border: none; border-top: 1px solid #e0e0e0; margin: 0; }
+    .venue-tag {
+      display: inline-block; margin-top: 0.5rem; padding: 0.25rem 0.9rem;
+      border-radius: 9999px; background: #363636; color: #fff;
+      font-weight: 600; font-size: 0.95rem;
+    }
+    .media-caption { color: #555; font-size: 0.95rem; margin-top: 0.4rem; }
+    .result-fig { width: 100%; height: auto; }
+
+    /* ---- Series hero ---- */
+    .series-hero {
+      background: linear-gradient(135deg, #eef2ff 0%, #f4f8ff 45%, #ffffff 100%);
+      border-bottom: 1px solid #e9eef7;
+    }
+    .series-hero .hero-body { padding-top: 3.75rem; padding-bottom: 3.75rem; }
+    .series-hero .publication-title {
+      background: linear-gradient(90deg, #485fc7, #3e8ed0);
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent; color: #485fc7;
+    }
+    .hero-tagline {
+      color: #5b6470; margin: 1rem auto 0; max-width: 640px;
+      font-size: 1.02rem; line-height: 1.5;
+    }
+
+    /* ---- Framed media: rounded corners + soft shadow ---- */
+    .framed-video {
+      border-radius: 12px; box-shadow: 0 12px 32px rgba(0,0,0,.14);
+      display: block; background: #000;
+    }
+
+    /* ---- Result figure cards ---- */
+    .result-card {
+      background: #fff; border: 1px solid #ececec; border-radius: 14px;
+      padding: 1rem 1rem 0.75rem; height: 100%;
+      box-shadow: 0 6px 20px rgba(0,0,0,.06);
+      transition: box-shadow .2s ease, transform .2s ease;
+    }
+    .result-card:hover {
+      box-shadow: 0 12px 28px rgba(0,0,0,.10); transform: translateY(-3px);
+    }
+    .result-card .media-caption { margin-top: 0.6rem; }
+
+    /* ---- Soft / Optimized / Stiff interactive comparison ---- */
+    .stiffness-boxes {
+      display: flex; gap: 1rem; justify-content: center; align-items: flex-start;
+      flex-wrap: wrap; margin-bottom: 1.2rem;
+    }
+    .stiffness-item {
+      position: relative;
+      flex: 1 1 0; max-width: 32%; text-align: center; opacity: 0.45;
+      border: 3px solid transparent; border-radius: 14px; padding: 0.5rem;
+      filter: grayscale(55%); transform: scale(0.95);
+      transition: opacity .3s ease, transform .3s cubic-bezier(.2,.8,.2,1),
+                  box-shadow .3s ease, filter .3s ease, border-color .3s ease;
+    }
+    .stiffness-item.active {
+      opacity: 1; filter: grayscale(0%);
+      border-color: #3e8ed0; transform: scale(1.03) translateY(-4px);
+      box-shadow: 0 14px 34px rgba(62,142,208,.30);
+    }
+    /* Pulsing ring on the active clip */
+    .stiffness-item::after {
+      content: ""; position: absolute; inset: 0; border-radius: 14px; pointer-events: none;
+    }
+    .stiffness-item.active::after { animation: stiff-pulse 1.8s ease-out infinite; }
+    @keyframes stiff-pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(62,142,208,.45); }
+      70%  { box-shadow: 0 0 0 14px rgba(62,142,208,0); }
+      100% { box-shadow: 0 0 0 0 rgba(62,142,208,0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .stiffness-item::after { animation: none; }
+    }
+    .stiffness-video { width: 100%; border-radius: 8px; display: block; }
+    .stiffness-label { margin-top: 0.5rem; font-weight: 600; color: #363636; transition: all .3s ease; }
+    .stiffness-item.active .stiffness-label {
+      color: #fff; background: #3e8ed0; border-radius: 999px;
+      padding: 0.15rem 0.95rem; display: inline-block;
+    }
+    /* Qualitative axis: compliant <-> rigid (overall interaction impedance).
+       3-col grid so the middle label sits exactly under the slider centre. */
+    .impedance-axis {
+      display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+      margin-top: 0.55rem; color: #8a8a8a; font-size: 0.85rem; font-style: italic;
+    }
+    .impedance-axis .axis-soft  { text-align: left;  white-space: nowrap; }
+    .impedance-axis .axis-stiff { text-align: right; white-space: nowrap; }
+    .impedance-axis .axis-mid {
+      justify-self: center; white-space: nowrap;
+      font-style: normal; font-weight: 700; font-size: 0.74rem; color: #3e8ed0;
+      letter-spacing: .04em; text-transform: uppercase;
+      border: 1px solid #cfe1f3; background: #f2f8fe;
+      padding: 0.22rem 0.75rem; border-radius: 999px;
+    }
+    .impedance-axis i { opacity: 0.75; }
+    @media (max-width: 768px) { .stiffness-item { max-width: 100%; } }
+    .pdf-embed {
+      width: 100%; height: 600px; border: 1px solid #ddd; border-radius: 6px;
+    }
+    .fill-me { background: #fff3cd; color: #856404; padding: 0 0.3rem; border-radius: 3px; }
+
+    /* ---- Progression roadmap ---- */
+    .roadmap-track {
+      display: flex; align-items: stretch; justify-content: center;
+      gap: 1rem; flex-wrap: wrap;
+    }
+    .roadmap-hint {
+      text-align: center; color: #555; font-size: 0.95rem; margin-bottom: 1rem;
+    }
+    .roadmap-hint i { color: #485fc7; margin-right: 0.3rem; }
+    .roadmap-step {
+      position: relative;
+      flex: 1 1 320px; max-width: 380px; text-align: left;
+      border: 2px solid #d6d6d6; border-radius: 12px; padding: 1.25rem 1.4rem 1rem;
+      background: #fff; color: inherit; text-decoration: none; cursor: pointer;
+      box-shadow: 0 3px 10px rgba(0,0,0,.08);
+      transition: box-shadow .2s ease, transform .2s ease, border-color .2s ease;
+    }
+    .roadmap-step:hover {
+      transform: translateY(-6px) scale(1.015);
+      box-shadow: 0 14px 30px rgba(0,0,0,.18);
+    }
+    .roadmap-step.focus-a:hover { border-color: #485fc7; box-shadow: 0 14px 30px rgba(72,95,199,.32); }
+    .roadmap-step.focus:hover   { border-color: #257953; box-shadow: 0 14px 30px rgba(37,121,83,.32); }
+    .roadmap-step:focus-visible { outline: 3px solid #485fc7; outline-offset: 3px; }
+    /* Call-to-action pill: makes the "this is clickable" affordance explicit */
+    .roadmap-cta {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      margin-top: 0.9rem; padding: 0.35rem 0.8rem; border-radius: 999px;
+      font-weight: 700; font-size: 0.85rem; color: #fff; background: #485fc7;
+      transition: gap .2s ease;
+    }
+    .roadmap-step.focus .roadmap-cta { background: #257953; }
+    .roadmap-step:hover .roadmap-cta { gap: 0.75rem; }
+    /* Gentle pulsing ring so the cards visibly invite a click */
+    .roadmap-step::after {
+      content: ""; position: absolute; inset: -2px; border-radius: 12px;
+      pointer-events: none; animation: roadmap-pulse-blue 2.2s ease-out infinite;
+    }
+    .roadmap-step.focus::after { animation-name: roadmap-pulse-green; }
+    .roadmap-step:hover::after { animation: none; }
+    @keyframes roadmap-pulse-blue {
+      0%   { box-shadow: 0 0 0 0 rgba(72,95,199,.45); }
+      70%  { box-shadow: 0 0 0 12px rgba(72,95,199,0); }
+      100% { box-shadow: 0 0 0 0 rgba(72,95,199,0); }
+    }
+    @keyframes roadmap-pulse-green {
+      0%   { box-shadow: 0 0 0 0 rgba(37,121,83,.45); }
+      70%  { box-shadow: 0 0 0 12px rgba(37,121,83,0); }
+      100% { box-shadow: 0 0 0 0 rgba(37,121,83,0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .roadmap-step::after { animation: none; }
+    }
+    .roadmap-arrow {
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem; color: #999;
+    }
+    .stage-badge {
+      display: inline-block; padding: 0.3rem 0.8rem; border-radius: 8px;
+      background: #485fc7; color: #fff; font-weight: 700; font-size: 0.85rem;
+      line-height: 1.3; white-space: normal; margin-bottom: 0.6rem;
+    }
+    .stage-badge.upgrade { background: #257953; }
+    .stage-badge.new { background: #257953; }
+    .stage-badge.ongoing { background: #7a7a7a; }
+    .roadmap-step.ongoing {
+      border-style: dashed; background: #fafafa; cursor: default;
+    }
+    .roadmap-step.ongoing:hover { box-shadow: none; transform: none; border-color: #ccc; }
+    .roadmap-step.focus { border-color: #257953; border-top: 3px solid #257953; }
+    .roadmap-step.focus-a { border-color: #485fc7; border-top: 3px solid #485fc7; }
+    .focus-tag { display: block; color: #257953; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.4rem; }
+    .ongoing-banner {
+      display: inline-block; max-width: 760px; text-align: center;
+      border: 1px dashed #b5b5b5; border-radius: 12px; background: #fafafa;
+      padding: 1rem 1.4rem; color: #444;
+    }
+    .ongoing-banner .stage-badge { margin-right: 0.5rem; margin-bottom: 0; vertical-align: middle; }
+    .roadmap-step h4 { font-weight: 700; font-size: 1.05rem; margin: 0.2rem 0 0.4rem; line-height: 1.3; }
+    .roadmap-step .roadmap-venue { color: #666; font-size: 0.85rem; }
+    .roadmap-step .roadmap-role { color: #444; font-size: 0.92rem; margin-top: 0.5rem; }
+
+    /* ---- Transition banner between papers ---- */
+    .transition-banner {
+      max-width: 760px; margin: 0 auto; text-align: center;
+      padding: 2.5rem 1.5rem 0.5rem;
+    }
+    .transition-banner .arrow-down { font-size: 2rem; color: #257953; }
+    .transition-banner h3 { font-weight: 700; margin: 0.5rem 0; }
+    .transition-banner .bridge-points {
+      display: inline-block; text-align: left; margin-top: 0.75rem;
+    }
+
+    @media (max-width: 768px) {
+      .roadmap-arrow { transform: rotate(90deg); }
+    }
+  </style>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="./static/js/fontawesome.all.min.js"></script>
+  <script src="./static/js/bulma-carousel.min.js"></script>
+  <script src="./static/js/bulma-slider.min.js"></script>
+  <script src="./static/js/index.js"></script>
+</head>
+<body>
+
+<nav class="navbar" role="navigation" aria-label="main navigation">
+  <div class="navbar-brand">
+    <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+    </a>
+  </div>
+  <div class="navbar-menu">
+    <div class="navbar-start" style="flex-grow: 1; justify-content: center;">
+      <a class="navbar-item" href="https://jacekcoder.github.io/YANGCHENGYUAN/"
+         title="Chengyuan Yang — Personal Homepage" aria-label="Personal homepage of Chengyuan Yang">
+        <span class="icon">
+          <i class="fas fa-home"></i>
+        </span>
+        <span style="margin-left:0.4rem;">Chengyuan Yang's Homepage</span>
+      </a>
+      <a class="navbar-item" href="#paper1">Beyond Heuristics (BioRob 2026)</a>
+      <a class="navbar-item" href="./phrase.html">PHRASE (IROS Workshop 2025)</a>
+      <a class="navbar-item" href="./static/images/BioRob_2026__DRBA_system.pdf" target="_blank" rel="noopener">
+        DRBA System (BioRob 2026)
+        <span class="icon is-small" style="margin-left:0.2rem;"><i class="fas fa-external-link-alt"></i></span>
+      </a>
+    </div>
+  </div>
+</nav>
+
+
+<!-- =================== HERO / SERIES TITLE =================== -->
+<section class="hero series-hero">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column has-text-centered">
+          <h1 class="title is-1 publication-title">pHRI Real2Sim in HITL-Simulation</h1>
+          <h2 class="subtitle is-4" style="margin-top: 0.75rem;">
+            Pipeline for modeling pHRI with MuJoCo
+          </h2>
+          <p class="hero-tagline">
+            Identifying and simulating physical human&ndash;robot interaction for
+            safe, personalized gait-assistive robots &mdash; from standardized MSD
+            parameter identification to soft-body contact modeling.
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- =========================================================== -->
+<!-- ======================= PAPER 1 =========================== -->
+<!-- =========================================================== -->
+<section class="section paper-section" id="paper1">
+  <div class="container is-max-desktop">
+
+    <!-- Title + authors -->
+    <div class="columns is-centered">
+      <div class="column has-text-centered">
+        <h2 class="title is-2 publication-title">
+          Beyond Heuristics: A Standardized Real2Sim Pipeline for Physical
+          Human-Robot Interaction in Human-in-the-Loop Simulation
+        </h2>
+
+        <div class="is-size-5 publication-authors">
+          <span class="author-block">Chengyuan Yang<sup>1</sup>,</span>
+          <span class="author-block">Yifan Wang<sup>1</sup>,</span>
+          <span class="author-block">Chun Kwang Tan<sup>1</sup>,</span>
+          <span class="author-block">Sherwin Stephen Chan<sup>1</sup>,</span>
+          <span class="author-block">Youlong Wang<sup>1</sup>,</span>
+          <span class="author-block">Xiaoyue Yan<sup>1</sup>,</span>
+          <span class="author-block">Lei Li<sup>2</sup>,</span>
+          <span class="author-block">Wei Tech Ang<sup>1</sup></span>
+        </div>
+
+        <div class="is-size-5 publication-authors">
+          <span class="author-block"><sup>1</sup>Nanyang Technological University,</span>
+          <span class="author-block"><sup>2</sup>Guangdong Zhongxin Intelligent Rehabilitation Research Institute, Foshan, China 528200</span>
+        </div>
+
+        <div style="margin-top:0.6rem;">
+          <span class="stage-badge">Tuning Pipeline for Conventional pHRI MSD Model</span>
+        </div>
+        <div class="venue-tag">BioRob 2026</div>
+
+        <!-- Links (Paper/arXiv/Code/Data are SKIP for now; video is shown below) -->
+        <!--
+        <div class="column has-text-centered">
+          <div class="publication-links">
+            <span class="link-block">
+              <a href="PDF_URL" class="external-link button is-normal is-rounded is-dark">
+                <span class="icon"><i class="fas fa-file-pdf"></i></span><span>Paper</span>
+              </a>
+            </span>
+          </div>
+        </div>
+        -->
+      </div>
+    </div>
+
+    <!-- Main media: video -->
+    <div class="columns is-centered has-text-centered" id="paper1-video">
+      <div class="column is-four-fifths">
+        <video id="biorob-video" class="framed-video" autoplay controls muted loop playsinline width="100%">
+          <source src="./static/videos/Biorob2026.mp4" type="video/mp4">
+        </video>
+      </div>
+    </div>
+
+    <!-- Abstract -->
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h3 class="title is-3">Abstract</h3>
+        <div class="content has-text-justified">
+          <p>
+            The rapid aging of the global population necessitates scalable assistive robotics;
+            however, development is hindered by the high safety risks and costs associated with
+            physical testing. Human-in-the-Loop (HITL) simulation offers a safe alternative, yet
+            existing frameworks for coupled systems (e.g., gait-assistive robots) often rely on
+            heuristic, manually tuned interaction models that fail to capture the complex dynamics
+            of soft interactions. To bridge this &ldquo;reality gap,&rdquo; this paper proposes a
+            comprehensive Real2Sim pipeline for identifying coupled Physical Human-Robot
+            Interaction (pHRI) dynamics. We formulate a generalized six-degrees-of-freedom (6-DoF) viscoelastic model to
+            capture the full spatial compliance of the pelvis-strap interface. Addressing the
+            ambiguity of harness fit across diverse anthropometrics, we employ a
+            psychophysics-constrained optimization strategy where subjective
+            &ldquo;Safe &amp; Comfortable&rdquo; feedback serves as a prior to regularize a Covariance Matrix Adaptation Evolution
+            Strategy (CMA-ES) identification process. Furthermore, through statistical analysis, we derive shareable
+            parameter sets that enable rapid, zero-shot configuration for new users. Validation
+            results demonstrate that our calibrated model significantly outperforms manual tuning,
+            reducing trajectory tracking errors and correctly inducing biomechanically accurate
+            gait adaptations in the Human Digital Twin. This approach significantly improves HITL
+            simulation fidelity, thereby enabling the Human Digital Twin to serve as a valid
+            predictive tool for accelerating the pre-clinical verification of personalized
+            controllers.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Interactive Soft / Optimized / Stiff comparison -->
+    <div class="columns is-centered">
+      <div class="column is-full-width">
+        <h3 class="title is-3 has-text-centered">Effect of Interaction Stiffness on Human Gait</h3>
+        <p class="content has-text-centered" style="color:#555;">
+          Adjust the pHRI model parameters &mdash; slide to a setting and the matching clip
+          plays on its own, showing how the interaction stiffness shapes the walking pattern.
+        </p>
+
+        <div class="stiffness-boxes">
+          <div class="stiffness-item" data-idx="0">
+            <video class="stiffness-video" muted loop playsinline preload="metadata">
+              <source src="./static/videos/Soft.mp4" type="video/mp4">
+            </video>
+            <p class="stiffness-label">Soft</p>
+          </div>
+          <div class="stiffness-item" data-idx="1">
+            <video class="stiffness-video" muted loop playsinline preload="metadata">
+              <source src="./static/videos/Tuned.mp4" type="video/mp4">
+            </video>
+            <p class="stiffness-label">Optimized</p>
+          </div>
+          <div class="stiffness-item" data-idx="2">
+            <video class="stiffness-video" muted loop playsinline preload="metadata">
+              <source src="./static/videos/Stiff.mp4" type="video/mp4">
+            </video>
+            <p class="stiffness-label">Stiff</p>
+          </div>
+        </div>
+
+        <input id="stiffness-slider" class="slider is-fullwidth is-large is-info"
+               type="range" min="0" max="2" step="1" value="1">
+        <div class="impedance-axis">
+          <span class="axis-soft"><i class="fas fa-arrow-left"></i>&nbsp;too compliant</span>
+          <span class="axis-mid">interaction impedance</span>
+          <span class="axis-stiff">too rigid&nbsp;<i class="fas fa-arrow-right"></i></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Additional results -->
+    <div class="columns is-centered">
+      <div class="column is-full-width">
+        <h3 class="title is-3 has-text-centered">Results</h3>
+        <div class="columns is-vcentered">
+          <div class="column has-text-centered">
+            <div class="result-card">
+              <img class="result-fig" src="./static/images/DRBA_validation.svg" alt="Working space validation"/>
+              <p class="media-caption">Working space validation</p>
+            </div>
+          </div>
+          <div class="column has-text-centered">
+            <div class="result-card">
+              <img class="result-fig" src="./static/images/gait_validation.svg" alt="Gait analysis validation"/>
+              <p class="media-caption">Gait analysis</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BibTeX -->
+    <div class="columns is-centered">
+      <div class="column is-four-fifths content">
+        <h3 class="title is-4">BibTeX</h3>
+        <!-- DRAFT bibtex auto-generated from the form — please verify before use. -->
+        <pre><code>@inproceedings{yang2026beyond,
+  author    = {Yang, Chengyuan and Wang, Yifan and Tan, Chun Kwang and Chan, Sherwin Stephen and Wang, Youlong and Yan, Xiaoyue and Li, Lei and Ang, Wei Tech},
+  title     = {Beyond Heuristics: A Standardized Real2Sim Pipeline for Physical Human-Robot Interaction in Human-in-the-Loop Simulation},
+  booktitle = {IEEE RAS/EMBS International Conference on Biomedical Robotics and Biomechatronics (BioRob)},
+  year      = {2026},
+}</code></pre>
+      </div>
+    </div>
+
+    <!-- Progression roadmap -->
+    <div class="columns is-centered">
+      <div class="column is-full-width">
+        <p class="roadmap-hint">
+          <i class="fas fa-hand-pointer"></i>
+          Two related works &mdash; <strong>click either card</strong> to open it
+        </p>
+        <div class="roadmap-track">
+
+          <a class="roadmap-step focus-a" href="#paper1">
+            <span class="stage-badge">Tuning Pipeline for Conventional pHRI MSD Model</span>
+            <h4>Beyond Heuristics</h4>
+            <div class="roadmap-venue">BioRob 2026</div>
+            <div class="roadmap-role">
+              The mainstream mass-spring-damper (MSD) interaction model &mdash; a well-trodden but
+              never fully specified path. We complete it with a standardized Real2Sim
+              parameter-identification pipeline.
+            </div>
+            <span class="roadmap-cta">Jump to this paper <i class="fas fa-arrow-down"></i></span>
+          </a>
+
+          <div class="roadmap-arrow"><i class="fas fa-arrow-right"></i></div>
+
+          <a class="roadmap-step focus" href="./phrase.html">
+            <span class="stage-badge new">Soft modeling method for pHRI</span>
+            <span class="focus-tag">future work</span>
+            <h4>PHRASE</h4>
+            <div class="roadmap-venue">IROS Workshop 2025 &middot; preliminary</div>
+            <div class="roadmap-role">
+              A fundamentally new modeling direction we pioneered early &mdash; conceived before
+              Direction A was finished, already with promising initial results.
+            </div>
+            <span class="roadmap-cta">Open the PHRASE page <i class="fas fa-arrow-right"></i></span>
+          </a>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<hr class="paper-divider">
+
+
+<!-- ==================== SYSTEM OVERVIEW ==================== -->
+<section class="section" id="system">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-full-width">
+        <h2 class="title is-3">The DRBA Robot</h2>
+        <p class="content" style="color:#555; max-width:760px; margin:0 auto 1.2rem;">
+          Both works are developed on the same platform &mdash; the DRBA assistive robot, which
+          integrates balance, sit-to-stand, and mobility assistance.
+        </p>
+        <img src="./static/images/DRBA_overview.png"
+             alt="DRBA robot system overview: balance, sit-to-stand, and mobility assistance subsystems."/>
+        <p class="media-caption">
+          System overview of the DRBA robot &mdash; the shared platform for both works:
+          (a) balance assistance, (b) sit-to-stand assistance, and (c) mobility assistance.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- =========================== FOOTER =========================== -->
+<footer class="footer">
+  <div class="container">
+    <div class="columns is-centered">
+      <div class="column is-8">
+        <div class="content">
+          <p>
+            This website is licensed under a <a rel="license"
+                                                href="http://creativecommons.org/licenses/by-sa/4.0/">Creative
+            Commons Attribution-ShareAlike 4.0 International License</a>.
+          </p>
+          <p>
+            This website borrows the <a
+              href="https://github.com/nerfies/nerfies.github.io">source code</a> of the
+            <span class="dnerf">Nerfies</span> project page.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Soft / Optimized / Stiff: the slider selects which clip plays.
+  (function () {
+    var slider = document.getElementById('stiffness-slider');
+    if (!slider) return;
+    var items = Array.prototype.slice.call(document.querySelectorAll('.stiffness-item'));
+    function update() {
+      var idx = parseInt(slider.value, 10);
+      items.forEach(function (item, i) {
+        var vid = item.querySelector('video');
+        if (i === idx) {
+          item.classList.add('active');
+          if (vid) { vid.play().catch(function () {}); }
+        } else {
+          item.classList.remove('active');
+          if (vid) { vid.pause(); }
+        }
+      });
+    }
+    slider.addEventListener('input', update);
+    slider.addEventListener('change', update);
+    update();
+  })();
+</script>
+
+</body>
+</html>

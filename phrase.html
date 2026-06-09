@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="description"
+        content="PHRASE: Personalized Human-Robot Interaction Simulation with Accurate Soft Body Modeling for Safe and Ergonomic Gait Assistance (IROS Workshop 2025).">
+  <meta name="keywords" content="pHRI modeling, Soft modeling, PHRASE, MuJoCo, gait assistance">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PHRASE — Soft pHRI Modeling (IROS Workshop 2025)</title>
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YCNWPYCD7Z"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+
+    function gtag() {
+      dataLayer.push(arguments);
+    }
+
+    gtag('js', new Date());
+
+    gtag('config', 'G-YCNWPYCD7Z');
+  </script>
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
+        rel="stylesheet">
+
+  <link rel="stylesheet" href="./static/css/bulma.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="./static/css/index.css">
+  <link rel="icon" type="image/svg+xml" href="./static/images/favicon.svg?v=2">
+
+  <!-- Small custom tweaks for the multi-paper layout -->
+  <style>
+    .paper-section { scroll-margin-top: 4rem; }
+    .venue-tag {
+      display: inline-block; margin-top: 0.5rem; padding: 0.25rem 0.9rem;
+      border-radius: 9999px; background: #363636; color: #fff;
+      font-weight: 600; font-size: 0.95rem;
+    }
+    .media-caption { color: #555; font-size: 0.95rem; margin-top: 0.4rem; }
+    .result-fig { width: 100%; height: auto; }
+    .stage-badge {
+      display: inline-block; padding: 0.3rem 0.8rem; border-radius: 8px;
+      background: #485fc7; color: #fff; font-weight: 700; font-size: 0.85rem;
+      line-height: 1.3; white-space: normal; margin-bottom: 0.6rem;
+    }
+    .stage-badge.new { background: #257953; }
+    .pdf-embed {
+      width: 100%; height: 600px; border: 1px solid #ddd; border-radius: 6px;
+    }
+    .framed-video {
+      border-radius: 12px; box-shadow: 0 12px 32px rgba(0,0,0,.14);
+      display: block; background: #000;
+    }
+
+    /* ---- PHRASE green-themed hero / intro ---- */
+    .phrase-hero {
+      background: linear-gradient(135deg, #e8f5ee 0%, #f3faf6 45%, #ffffff 100%);
+      border-bottom: 1px solid #e2efe8;
+    }
+    .kicker {
+      display: inline-block; text-transform: uppercase; letter-spacing: .08em;
+      font-size: 0.72rem; font-weight: 700; color: #257953;
+      background: #dff0e7; border: 1px solid #bfe0cf;
+      padding: 0.25rem 0.75rem; border-radius: 999px; margin-bottom: 0.7rem;
+    }
+    /* ---- Transition banner / intro ---- */
+    .transition-banner {
+      max-width: 760px; margin: 0 auto; text-align: center;
+      padding: 2.5rem 1.5rem 0.5rem;
+    }
+    .transition-banner h3 { font-weight: 700; margin: 0.5rem 0; }
+    .back-link { margin-top: 1.6rem; display: inline-flex; }
+    .back-link.button {
+      background: #257953; color: #fff; border: none; font-weight: 700;
+      border-radius: 999px; padding: 0.7rem 1.5rem; height: auto;
+      box-shadow: 0 6px 16px rgba(37,121,83,.30);
+      transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+    }
+    .back-link.button:hover {
+      background: #1f6645; color: #fff;
+      transform: translateY(-2px); box-shadow: 0 11px 24px rgba(37,121,83,.40);
+    }
+    .back-link.button .icon { transition: transform .2s ease; }
+    .back-link.button:hover .icon { transform: translateX(-3px); }
+
+    /* ---- Document (paper / poster) cards ---- */
+    .doc-card {
+      background: #fff; border: 1px solid #e8e8e8; border-radius: 14px;
+      padding: 1.25rem 1.25rem 1.4rem; margin-bottom: 1.75rem;
+      box-shadow: 0 6px 20px rgba(0,0,0,.06);
+    }
+    .doc-head {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 0.6rem; margin-bottom: 1rem;
+    }
+    .doc-title {
+      display: flex; align-items: center; gap: 0.55rem;
+      font-weight: 700; color: #363636; font-size: 1.05rem;
+    }
+    .doc-title .doc-ico { color: #257953; }
+    .doc-open-btn {
+      background: #257953; color: #fff; border: none; border-radius: 999px;
+      font-weight: 600; padding: 0.4rem 0.95rem;
+    }
+    .doc-open-btn:hover { background: #1f6645; color: #fff; }
+  </style>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="./static/js/fontawesome.all.min.js"></script>
+  <script src="./static/js/bulma-carousel.min.js"></script>
+  <script src="./static/js/bulma-slider.min.js"></script>
+  <script src="./static/js/index.js"></script>
+</head>
+<body>
+
+<nav class="navbar" role="navigation" aria-label="main navigation">
+  <div class="navbar-brand">
+    <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+    </a>
+  </div>
+  <div class="navbar-menu">
+    <div class="navbar-start" style="flex-grow: 1; justify-content: center;">
+      <a class="navbar-item" href="https://jacekcoder.github.io/YANGCHENGYUAN/">
+        <span class="icon">
+          <i class="fas fa-home"></i>
+        </span>
+      </a>
+      <a class="navbar-item" href="./index.html#paper1">Beyond Heuristics (BioRob 2026)</a>
+      <a class="navbar-item" href="#paper2">PHRASE (IROS Workshop 2025)</a>
+      <a class="navbar-item" href="./static/images/BioRob_2026__DRBA_system.pdf" target="_blank" rel="noopener">
+        DRBA System (BioRob 2026)
+        <span class="icon is-small" style="margin-left:0.2rem;"><i class="fas fa-external-link-alt"></i></span>
+      </a>
+    </div>
+  </div>
+</nav>
+
+
+<!-- ============== INTRO: context for PHRASE ============== -->
+<section class="section phrase-hero" style="padding-bottom:0;">
+  <div class="transition-banner">
+    <span class="kicker"><i class="fas fa-flask"></i>&nbsp; Future work &middot; IROS Workshop 2025</span>
+    <h3 class="title is-4">A new soft-modeling direction &mdash; our future work</h3>
+    <!-- Narrative based on the author's description — please fine-tune the exact wording. -->
+    <p>
+      While <em>Beyond Heuristics</em> completes the conventional <strong>MSD</strong> interaction
+      model, we have, in parallel, been exploring a fundamentally different
+      <strong>soft modeling method</strong> for pHRI. We conceived it even before the MSD pipeline
+      was finished and already obtained promising results, published here as a preliminary study
+      (<em>PHRASE</em>, IROS 2025). Developing this soft-modeling direction into a complete framework
+      is our ongoing <strong>future work</strong>.
+    </p>
+    <a class="button back-link" href="./index.html#paper1">
+      <span class="icon"><i class="fas fa-arrow-left"></i></span>
+      <span>Back to Beyond Heuristics (BioRob 2026)</span>
+    </a>
+  </div>
+</section>
+
+
+<!-- =========================================================== -->
+<!-- ======================= PHRASE ============================ -->
+<!-- =========================================================== -->
+<section class="section paper-section" id="paper2">
+  <div class="container is-max-desktop">
+
+    <!-- Title + authors -->
+    <div class="columns is-centered">
+      <div class="column has-text-centered">
+        <h2 class="title is-2 publication-title">
+          PHRASE: Personalized Human-Robot Interaction Simulation with Accurate
+          Soft Body Modeling for Safe and Ergonomic Gait Assistance
+        </h2>
+
+        <div class="is-size-5 publication-authors">
+          <span class="author-block">Yifan Wang<sup>*,1</sup>,</span>
+          <span class="author-block">Chengyuan Yang<sup>*,1</sup>,</span>
+          <span class="author-block">Vasanthamaran Ravichandram<sup>1</sup>,</span>
+          <span class="author-block">Sherwin Stephen Chan<sup>1</sup>,</span>
+          <span class="author-block">Chun Kwang Tan<sup>1</sup>,</span>
+          <span class="author-block">Wei Tech Ang<sup>1</sup></span>
+        </div>
+
+        <div class="is-size-5 publication-authors">
+          <span class="author-block"><sup>1</sup>Nanyang Technological University</span>
+        </div>
+        <div class="is-size-6" style="margin-top: 0.4rem; color:#666;">
+          <sup>*</sup>Indicates equal contribution
+        </div>
+
+        <div style="margin-top:0.6rem;">
+          <span class="stage-badge new">Soft modeling method for pHRI &middot; preliminary</span>
+        </div>
+        <div class="venue-tag">IROS Workshop 2025</div>
+      </div>
+    </div>
+
+    <!-- Abstract -->
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h3 class="title is-3">Abstract</h3>
+        <div class="content has-text-justified">
+          <p>
+            Personalizing gait-assistive robots is limited by safety and ethical constraints, which
+            motivates studying physical human-robot interaction (pHRI) in human-in-the-loop (HITL)
+            simulation &mdash; yet real pHRI is hard to replicate because existing models overlook
+            the complex soft-contact dynamics that matter most during falls. We present
+            <span class="dnerf">PHRASE</span>, a first-of-its-kind soft-pHRI simulation in MuJoCo
+            that combines a personalized soft human model (via SKEL), an elastic strap model, and a
+            virtual buckle&ndash;hole tightness controller. Across two subjects and three tightness
+            levels, simulated waistline forces grow with tightening and body-mass index and reveal
+            peak-force regions linked to discomfort, guiding more ergonomic strap and robot design.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main media: video (filename has a space -> %20) -->
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <video id="iros-video" class="framed-video" autoplay controls muted loop playsinline width="100%">
+          <source src="./static/videos/IROS_LateBreaking%202.mp4" type="video/mp4">
+        </video>
+      </div>
+    </div>
+
+    <!-- Additional material: figure + poster PDFs -->
+    <div class="columns is-centered">
+      <div class="column is-full-width">
+        <h3 class="title is-3 has-text-centered">Paper &amp; Poster</h3>
+
+        <div class="doc-card">
+          <div class="doc-head">
+            <span class="doc-title"><i class="fas fa-file-pdf doc-ico"></i> Workshop Paper</span>
+            <a class="button is-small doc-open-btn" href="./static/images/IROS25_5490_FI.pdf" target="_blank" rel="noopener">
+              <span class="icon is-small"><i class="fas fa-external-link-alt"></i></span>
+              <span>Open in new tab</span>
+            </a>
+          </div>
+          <iframe class="pdf-embed" src="./static/images/IROS25_5490_FI.pdf"></iframe>
+        </div>
+
+        <div class="doc-card">
+          <div class="doc-head">
+            <span class="doc-title"><i class="fas fa-image doc-ico"></i> Poster</span>
+            <a class="button is-small doc-open-btn" href="./static/images/IROS25_5490_POS_fi.pdf" target="_blank" rel="noopener">
+              <span class="icon is-small"><i class="fas fa-external-link-alt"></i></span>
+              <span>Open in new tab</span>
+            </a>
+          </div>
+          <iframe class="pdf-embed" src="./static/images/IROS25_5490_POS_fi.pdf"></iframe>
+        </div>
+      </div>
+    </div>
+
+
+  </div>
+</section>
+
+
+<!-- =========================== FOOTER =========================== -->
+<footer class="footer">
+  <div class="container">
+    <div class="columns is-centered">
+      <div class="column is-8">
+        <div class="content">
+          <p>
+            This website is licensed under a <a rel="license"
+                                                href="http://creativecommons.org/licenses/by-sa/4.0/">Creative
+            Commons Attribution-ShareAlike 4.0 International License</a>.
+          </p>
+          <p>
+            This website borrows the <a
+              href="https://github.com/nerfies/nerfies.github.io">source code</a> of the
+            <span class="dnerf">Nerfies</span> project page.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Play the PHRASE (IROS) video at 1.5x by default.
+  (function () {
+    var v = document.getElementById('iros-video');
+    if (!v) return;
+    function setRate() { v.playbackRate = 2.0; }
+    v.addEventListener('loadedmetadata', setRate);
+    v.addEventListener('play', setRate);
+    setRate();
+  })();
+</script>
+
+</body>
+</html>
