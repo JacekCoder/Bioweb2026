@@ -133,7 +133,19 @@
       padding: 0.22rem 0.75rem; border-radius: 999px;
     }
     .impedance-axis i { opacity: 0.75; }
-    @media (max-width: 768px) { .stiffness-item { max-width: 100%; } }
+    @media (max-width: 768px) {
+      /* Stack the clips instead of cramming three across */
+      .stiffness-item { flex: 1 1 100%; max-width: 100%; }
+      /* Drop the active scale so a full-width card can't overflow sideways */
+      .stiffness-item.active { transform: translateY(-4px); }
+      /* Keep the impedance axis inside the viewport */
+      .impedance-axis { font-size: 0.74rem; }
+      .impedance-axis .axis-soft,
+      .impedance-axis .axis-stiff { white-space: normal; }
+      .impedance-axis .axis-mid {
+        font-size: 0.62rem; letter-spacing: .02em; padding: 0.2rem 0.55rem;
+      }
+    }
     .pdf-embed {
       width: 100%; height: 600px; border: 1px solid #ddd; border-radius: 6px;
     }
