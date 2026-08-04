@@ -381,12 +381,14 @@
             of soft interactions. To bridge this &ldquo;reality gap,&rdquo; this paper proposes a
             comprehensive Real2Sim pipeline for identifying coupled Physical Human-Robot
             Interaction (pHRI) dynamics. We formulate a generalized six-degrees-of-freedom (6-DoF) viscoelastic model to
-            capture the full spatial compliance of the pelvis-strap interface. Addressing the
-            ambiguity of harness fit across diverse anthropometrics, we employ a
-            psychophysics-constrained optimization strategy where subjective
-            &ldquo;Safe &amp; Comfortable&rdquo; feedback serves as a prior to regularize a Covariance Matrix Adaptation Evolution
-            Strategy (CMA-ES) identification process. Furthermore, through statistical analysis, we derive shareable
-            parameter sets that enable rapid, zero-shot configuration for new users. Validation
+            capture the full spatial compliance of the pelvis-strap interface. To resolve the
+            ambiguity of harness fit across diverse anthropometrics, we anchor the pipeline to each
+            user&rsquo;s subjective &ldquo;Safe &amp; Comfortable&rdquo; feedback as a reproducible operating point.
+            The interface&rsquo;s physical joint limits are calibrated at this operating point, and within those
+            limits the 12 directional stiffness and damping parameters are identified per subject via
+            Covariance Matrix Adaptation Evolution Strategy (CMA-ES). Furthermore, an intraclass-correlation
+            analysis across subjects separates shareable from subject-specific parameters. The resulting
+            priors configure a previously unseen user by refining only 4 of the 12 parameters. Validation
             results demonstrate that our calibrated model significantly outperforms manual tuning,
             reducing trajectory tracking errors and correctly inducing biomechanically accurate
             gait adaptations in the Human Digital Twin. This approach significantly improves HITL
